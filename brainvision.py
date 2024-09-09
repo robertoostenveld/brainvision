@@ -1,0 +1,159 @@
+import os
+import numpy as np
+
+# Python implementation to read and write EEG data in the BrainVision Core data format
+#
+# Copyright (C) 2024, Robert Oostenveld
+
+def read(filename):
+    (root, ext) = os.path.splitext(filename)
+    if ext != '.vhdr': # FIXME, what about upper and lower case?
+        raise ValueError('Filename does not have the .vhdr extension')
+    vhdr = read_vhdr(filename)
+    path = os.path.dirname(filename)
+    markerfile = os.path.join(path, vhdr['Common Infos']['MarkerFile'])
+    datafile = os.path.join(path, vhdr['Common Infos']['DataFile']) 
+    vmrk = read_vmrk(markerfile)    
+    eeg  = read_eeg(datafile, vhdr)
+    return (vhdr, vmrk, eeg)
+
+def write(filename, vhdr, vmrk, eeg):
+    (root, ext) = os.path.splitext(filename)
+    if ext != '.vhdr':
+        raise ValueError('Filename does not have the .vhdr extension')
+    # update the filenames in the header and marker file
+    vhdr['Common Infos']['MarkerFile'] = os.path.basename(root) + '.vmrk'
+    vhdr['Common Infos']['DataFile'] = os.path.basename(root) + '.eeg'
+    vmrk['Common Infos']['DataFile'] = os.path.basename(root) + '.eeg'
+    # update the binary format
+    vhdr['Common Infos']['DataFormat'] = 'BINARY'
+    vhdr['Common Infos']['DataOrientation'] = 'MULTIPLEXED'
+    vhdr['Binary Infos']['BinaryFormat'] = 'IEEE_FLOAT_32'
+    # update the number of channels
+    vhdr['Common Infos']['NumberOfChannels'] = str(eeg.shape[0])
+    # update the calibration, which is not needed for the float32 representation 
+    nchans = int(vhdr['Common Infos']['NumberOfChannels'])
+    if nchans != eeg.shape[0]:
+        raise ValueError('Number of channels in header does not match data')
+    for ch in range(nchans):
+        info = vhdr['Channel Infos']['Ch%d' % (ch+1)]
+        print(info)
+        (name, ref, resolution, unit) = info.split(',')
+        resolution = '1'
+        vhdr['Channel Infos']['Ch%d' % (ch+1)] = ','.join((name, ref, resolution, unit))
+    # write the header file
+    with open(root + '.vhdr', 'w') as f:
+        for section in vhdr:
+            f.write('[%s]\n' % section)
+            for key in vhdr[section]:
+                f.write('%s=%s\n' % (key, vhdr[section][key]))
+            f.write('\n')
+    # write the marker file
+    with open(root + '.vmrk', 'w') as f:
+        for section in vmrk:
+            f.write('[%s]\n' % section)
+            for key in vmrk[section]:
+                f.write('%s=%s\n' % (key, vmrk[section][key]))
+            f.write('\n')
+    # update the binary data and write the EEG data file
+    eeg = eeg.transpose().astype(np.float32, order='C', copy=False)
+    eeg.tofile(root + '.eeg')
+    return
+
+def read_vhdr(filename):
+    vhdr = read_ini(filename)
+    return vhdr
+
+def read_vmrk(filename):
+    vmrk = read_ini(filename)
+    return vmrk
+
+def read_eeg(filename, vhdr):
+    if vhdr['Binary Infos']['BinaryFormat'] == 'INT_16':
+        eeg = np.fromfile(filename, dtype=np.int16)
+    elif vhdr['Binary Infos']['BinaryFormat'] == 'INT_32':
+        eeg = np.fromfile(filename, dtype=np.int32)
+    elif vhdr['Binary Infos']['BinaryFormat'] == 'IEEE_FLOAT_32':
+        eeg = np.fromfile(filename, dtype=np.float32)
+    else:
+        raise ValueError('Unknown binary format')
+    nchans = int(vhdr['Common Infos']['NumberOfChannels'])
+    if vhdr['Common Infos']['DataOrientation'] == 'MULTIPLEXED':
+        eeg = np.reshape(eeg, (nchans, -1), order='F')
+    elif vhdr['Common Infos']['DataOrientation'] == 'VECTORIZED':
+        eeg = np.reshape(eeg, (nchans, -1), order='C')
+    else:
+        raise ValueError('Unknown data orientation')
+    # convert to 32 bit float
+    eeg = eeg.astype(np.float32)
+    # apply the calibration to get the actual values
+    for ch in range(nchans):
+        info = vhdr['Channel Infos']['Ch%d' % (ch+1)]
+        (name, ref, resolution, unit) = info.split(',')
+        eeg[ch] = eeg[ch] * float(resolution)
+    return eeg
+
+# The vhdr and vmrk file are very similar to Windows INI files, and can be read with the read_ini function.
+# Note that the files are incompatible with the TOML parser due to some uncommented lines and blocks.
+def read_ini(filename):
+    ini = {}
+    section = 'unknown'
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        # remove trailing whitespace
+        line = line.strip()
+        if line.startswith(';'):
+            # this is a comment
+            pass
+        elif line.startswith('==') or line.startswith('--'):
+            # this is formatting in the comment section
+            pass
+        elif line.startswith('['):
+            # this is a section header
+            section = line[1:-1]
+            ini[section] = {}
+        elif '=' in line:
+            # this is a key=value pair
+            (key, value) = line.split('=', 1)
+            ini[section][key] = value
+        else:
+            # this is a blank line or a line that does not adhere to the expected formatting
+            pass
+    return ini
+
+
+if __name__ == '__main__':
+    (vhdr, vmrk, eeg) = read('test/test.vhdr')
+    print("-----------------------------------------------------------------")
+    print('ORIGINAL FILE')
+    print("-----------------------------------------------------------------")
+    print(vhdr)
+    print("-----------------------------------------------------------------")
+    print(vmrk)
+    print("-----------------------------------------------------------------")
+    print(eeg)
+    print("-----------------------------------------------------------------")
+    write('test/test1.vhdr', vhdr, vmrk, eeg)
+    (vhdr1, vmrk1, eeg1) = read('test/test1.vhdr')
+    print("-----------------------------------------------------------------")
+    print('AFTER READING AND WRITING')
+    print("-----------------------------------------------------------------")
+    print(vhdr1)
+    print("-----------------------------------------------------------------")
+    print(vmrk1)
+    print("-----------------------------------------------------------------")
+    print(eeg1)
+    print("-----------------------------------------------------------------")
+    if vhdr != vhdr1:
+        raise ValueError('Header files do not match')
+    if vmrk != vmrk1:
+        raise ValueError('Marker files do not match')
+    if not np.array_equal(eeg, eeg1):
+        raise ValueError('EEG data files do not match')
+    print('ALL TESTS PASSED')
+    print("-----------------------------------------------------------------")
+    # clean up the temporary files
+    os.remove('test/test1.vhdr')
+    os.remove('test/test1.vmrk')
+    os.remove('test/test1.eeg')

@@ -1,4 +1,5 @@
 import os
+import sys
 import numpy as np
 
 # Python implementation to read and write EEG data in the BrainVision Core data format
@@ -18,6 +19,8 @@ def read(filename):
     return (vhdr, vmrk, eeg)
 
 def write(filename, vhdr, vmrk, eeg):
+    if sys.byteorder != 'little':
+        raise ValueError('This function is only implemented for little-endian systems')
     (root, ext) = os.path.splitext(filename)
     if ext != '.vhdr':
         raise ValueError('Filename does not have the .vhdr extension')
@@ -29,15 +32,13 @@ def write(filename, vhdr, vmrk, eeg):
     vhdr['Common Infos']['DataFormat'] = 'BINARY'
     vhdr['Common Infos']['DataOrientation'] = 'MULTIPLEXED'
     vhdr['Binary Infos']['BinaryFormat'] = 'IEEE_FLOAT_32'
-    # update the number of channels
-    vhdr['Common Infos']['NumberOfChannels'] = str(eeg.shape[0])
-    # update the calibration, which is not needed for the float32 representation 
+    # check consistency between header and data
     nchans = int(vhdr['Common Infos']['NumberOfChannels'])
     if nchans != eeg.shape[0]:
         raise ValueError('Number of channels in header does not match data')
+    # update the calibration, which is not needed for the float32 representation 
     for ch in range(nchans):
         info = vhdr['Channel Infos']['Ch%d' % (ch+1)]
-        print(info)
         (name, ref, resolution, unit) = info.split(',')
         resolution = '1'
         vhdr['Channel Infos']['Ch%d' % (ch+1)] = ','.join((name, ref, resolution, unit))
@@ -69,6 +70,10 @@ def read_vmrk(filename):
     return vmrk
 
 def read_eeg(filename, vhdr):
+    if vhdr['Common Infos']['DataFormat'] != 'BINARY':
+        raise ValueError('This function is only implemented for binary data')
+    if sys.byteorder != 'little':
+        raise ValueError('This function is only implemented for little-endian systems')
     if vhdr['Binary Infos']['BinaryFormat'] == 'INT_16':
         eeg = np.fromfile(filename, dtype=np.int16)
     elif vhdr['Binary Infos']['BinaryFormat'] == 'INT_32':
@@ -122,9 +127,21 @@ def read_ini(filename):
             pass
     return ini
 
-
 if __name__ == '__main__':
     (vhdr, vmrk, eeg) = read('test/test.vhdr')
+
+    # parse the header
+    nchans = int(vhdr['Common Infos']['NumberOfChannels'])
+    labels = [item.split(',')[0] for item in vhdr['Channel Infos'].values()]
+    units  = [item.split(',')[3] for item in vhdr['Channel Infos'].values()]
+
+    # parse the markers
+    type        = [item.split(',')[0] for item in vmrk['Marker Infos'].values()]
+    description = [item.split(',')[1] for item in vmrk['Marker Infos'].values()]
+    sample      = [int(item.split(',')[2])-1 for item in vmrk['Marker Infos'].values()]   # in data points, 0-based
+    duration    = [int(item.split(',')[3])   for item in vmrk['Marker Infos'].values()]   # in data points
+    channel     = [int(item.split(',')[4])   for item in vmrk['Marker Infos'].values()]   # note that this is 1-based
+
     print("-----------------------------------------------------------------")
     print('ORIGINAL FILE')
     print("-----------------------------------------------------------------")
@@ -134,6 +151,8 @@ if __name__ == '__main__':
     print("-----------------------------------------------------------------")
     print(eeg)
     print("-----------------------------------------------------------------")
+
+    # write the data back to a new file and read it again
     write('test/test1.vhdr', vhdr, vmrk, eeg)
     (vhdr1, vmrk1, eeg1) = read('test/test1.vhdr')
     print("-----------------------------------------------------------------")
@@ -145,14 +164,18 @@ if __name__ == '__main__':
     print("-----------------------------------------------------------------")
     print(eeg1)
     print("-----------------------------------------------------------------")
+
+    # compare the original file with the one that was just written
     if vhdr != vhdr1:
         raise ValueError('Header files do not match')
     if vmrk != vmrk1:
         raise ValueError('Marker files do not match')
     if not np.array_equal(eeg, eeg1):
         raise ValueError('EEG data files do not match')
+
     print('ALL TESTS PASSED')
     print("-----------------------------------------------------------------")
+
     # clean up the temporary files
     os.remove('test/test1.vhdr')
     os.remove('test/test1.vmrk')

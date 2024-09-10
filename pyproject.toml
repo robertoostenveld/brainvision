@@ -1,0 +1,19 @@
+[build-system]
+requires        = ['setuptools >= 62.2.0', 'wheel']
+build-backend   = 'setuptools.build_meta'
+
+[project]
+name            = 'brainvision'
+description     = 'Read and write EEG data in the BrainVision Core data format'
+version         = '0.1'
+readme          = 'README.md'
+requires-python = '>= 3.8'
+authors         = [{email = 'r.oostenveld@donders.ru.nl'}, {name = 'Robert Oostenveld'}]
+classifiers     = ['Programming Language :: Python :: 3.8',
+                     'Operating System :: OS Independent',
+                     'Intended Audience :: Science/Research']
+dependencies    = ['numpy']
+
+[project.urls]
+homepage        = 'https://github.com/robertoostenveld/brainvision'
+repository      = 'https://github.com/robertoostenveld/brainvision'

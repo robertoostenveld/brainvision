@@ -8,6 +8,14 @@ The information from the header and marker is not parsed but retained as a dicti
 
 This implementation can read from 16 and 32 bit integer formats and 32 bit float formats. It supports multiplexed and vectorized orientations. The data is returned as a channels-by-samples Numpy array with float32 values.
 
+## Installation
+
+This package is maintained on [PyPi](https://pypi.org/project/brainvision/) and can be installed with pip.
+
+```console
+pip install brainvision
+```
+
 ## Example
 
 The following example reads data from disk.

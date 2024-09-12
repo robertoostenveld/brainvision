@@ -46,6 +46,7 @@ def write(filename, vhdr, vmrk, eeg):
         vhdr['Channel Infos']['Ch%d' % (ch+1)] = ','.join((name, ref, resolution, unit))
     # write the header file
     with open(root + '.vhdr', 'w') as f:
+        f.write('BrainVision Data Exchange Header File Version 1.0\n\n')
         for section in vhdr:
             f.write('[%s]\n' % section)
             for key in vhdr[section]:
@@ -53,6 +54,7 @@ def write(filename, vhdr, vmrk, eeg):
             f.write('\n')
     # write the marker file
     with open(root + '.vmrk', 'w') as f:
+        f.write('BrainVision Data Exchange Marker File Version 1.0\n\n')
         for section in vmrk:
             f.write('[%s]\n' % section)
             for key in vmrk[section]:

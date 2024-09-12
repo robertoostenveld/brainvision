@@ -16,9 +16,14 @@ def read(filename):
     datafile = os.path.join(path, vhdr['Common Infos']['DataFile']) 
     vmrk = read_vmrk(markerfile)    
     eeg  = read_eeg(datafile, vhdr)
+    # validate the data that was read
+    validate(vhdr, vmrk, eeg)
     return (vhdr, vmrk, eeg)
 
+
 def write(filename, vhdr, vmrk, eeg):
+    # validate the data that is to be written
+    validate(vhdr, vmrk, eeg)
     if sys.byteorder != 'little':
         raise ValueError('This function is only implemented for little-endian systems')
     (root, ext) = os.path.splitext(filename)
@@ -32,11 +37,8 @@ def write(filename, vhdr, vmrk, eeg):
     vhdr['Common Infos']['DataFormat'] = 'BINARY'
     vhdr['Common Infos']['DataOrientation'] = 'MULTIPLEXED'
     vhdr['Binary Infos']['BinaryFormat'] = 'IEEE_FLOAT_32'
-    # check consistency between header and data
-    nchans = int(vhdr['Common Infos']['NumberOfChannels'])
-    if nchans != eeg.shape[0]:
-        raise ValueError('Number of channels in header does not match data')
     # update the calibration, which is not needed for the float32 representation 
+    nchans = int(vhdr['Common Infos']['NumberOfChannels'])
     for ch in range(nchans):
         info = vhdr['Channel Infos']['Ch%d' % (ch+1)]
         (name, ref, resolution, unit) = info.split(',')
@@ -61,13 +63,49 @@ def write(filename, vhdr, vmrk, eeg):
     eeg.tofile(root + '.eeg')
     return
 
+
+def validate(vhdr, vmrk, eeg):
+    # check that the required sections are present in the vhdr
+    sections = ['Common Infos', 'Binary Infos', 'Channel Infos']
+    for section in sections:
+        if not section in vhdr:
+            raise ValueError('%s section is missing in vhdr' % section)
+    sections = ['Codepage', 'DataFile', 'DataFormat', 'DataOrientation', 'NumberOfChannels', 'SamplingInterval']
+    for section in sections:
+        if not section in vhdr['Common Infos']:
+            raise ValueError('%s section is missing in Common Infos' % section)
+    sections =  ['BinaryFormat']
+    for section in sections:
+        if not section in vhdr['Binary Infos']:
+            raise ValueError('%s section is missing in Binary Infos' % section)
+    nchans = int(vhdr['Common Infos']['NumberOfChannels'])
+    for ch in range(nchans):
+        if not 'Ch%d' % (ch+1) in vhdr['Channel Infos']:
+            raise ValueError('%s section is missing in Channel Infos' % section)
+    # check consistency between header and data
+    nchans = int(vhdr['Common Infos']['NumberOfChannels'])
+    if nchans != eeg.shape[0]:
+        raise ValueError('Number of channels in header does not match data')
+    # check that the required sections are present in the vmrk
+    sections = ['Common Infos', 'Marker Infos']
+    for section in sections:
+        if not section in vmrk:
+            raise ValueError('%s section is missing in vmrk' % section)
+    sections = ['Codepage', 'DataFile']
+    for section in sections:
+        if not section in vmrk['Common Infos']:
+            raise ValueError('%s section is missing in Common Infos' % section)
+
+
 def read_vhdr(filename):
     vhdr = read_ini(filename)
     return vhdr
 
+
 def read_vmrk(filename):
     vmrk = read_ini(filename)
     return vmrk
+
 
 def read_eeg(filename, vhdr):
     if vhdr['Common Infos']['DataFormat'] != 'BINARY':
@@ -98,8 +136,9 @@ def read_eeg(filename, vhdr):
         eeg[ch] = eeg[ch] * float(resolution)
     return eeg
 
-# The vhdr and vmrk file are very similar to Windows INI files, and can be read with the read_ini function.
-# Note that the files are incompatible with the TOML parser due to some uncommented lines and blocks.
+
+# The vhdr and vmrk file are almost fully conform to Windows INI files, but there are some
+# deviations that make them incompatible with the ConfigParser and TOML parser.
 def read_ini(filename):
     ini = {}
     section = 'unknown'
@@ -132,6 +171,7 @@ if __name__ == '__main__':
 
     # parse the header
     nchans = int(vhdr['Common Infos']['NumberOfChannels'])
+    fsample = 1000000.0 / float(vhdr['Common Infos']['SamplingInterval'])
     labels = [item.split(',')[0] for item in vhdr['Channel Infos'].values()]
     units  = [item.split(',')[3] for item in vhdr['Channel Infos'].values()]
 

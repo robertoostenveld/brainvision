@@ -1,4 +1,4 @@
-# BrainVision Core reader and writer
+# Read and write EEG data in the BrainVision Core data format
 
 This is a Python implementation to read and write EEG data in the BrainVision Core data format as defined by [BrainProducts](https://www.brainproducts.com/) and as used in [BIDS](https://bids.neuroimaging.io/).
 
@@ -55,9 +55,9 @@ The test data that is included to demonstrate the functionality and to test the 
 ## See also
 
 - https://www.brainproducts.com/support-resources/brainvision-core-data-format-1-0/
-- https://github.com/bids-standard/pybv/
 - https://pybv.readthedocs.io/en/stable/
+- https://github.com/bids-standard/pybv/
+- https://github.com/bids-standard/pyedf/
 - https://github.com/fieldtrip/fieldtrip/blob/master/fileio/private/read_brainvision_vhdr.m 
 - https://github.com/fieldtrip/fieldtrip/blob/master/fileio/private/read_brainvision_vmrk.m 
 - https://github.com/fieldtrip/fieldtrip/blob/master/fileio/private/read_brainvision_eeg.m 
-- https://github.com/bids-standard/pyedf/

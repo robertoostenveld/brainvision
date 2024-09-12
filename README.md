@@ -52,7 +52,7 @@ The following example constructs data from scratch and writes it to disk. Upon w
 import numpy as np
 import brainvision
 
-vhdr = {'Common Infos': {'Codepage': 'UTF-8', 'DataFile': 'output.eeg', 'MarkerFile': 'output.vmrk', 'DataFormat': 'BINARY', 'DataOrientation': 'MULTIPLEXED', 'NumberOfChannels': '1', 'SamplingInterval': '1000'}, 'Binary Infos': {'BinaryFormat': 'FLOAT_32'}, 'Channel Infos': {'Ch1': '1,,0.5,µV'}}
+vhdr = {'Common Infos': {'Codepage': 'UTF-8', 'DataFile': 'output.eeg', 'MarkerFile': 'output.vmrk', 'DataFormat': 'BINARY', 'DataOrientation': 'MULTIPLEXED', 'NumberOfChannels': '1', 'SamplingInterval': '1000'}, 'Binary Infos': {'BinaryFormat': 'IEEE_FLOAT_32'}, 'Channel Infos': {'Ch1': '1,,0.5,µV'}}
 
 vmrk = {'Common Infos': {'Codepage': 'UTF-8', 'DataFile': 'output.eeg'}, 'Marker Infos': {'Mk1': 'New Segment,,1,1,0'}}
 

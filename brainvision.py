@@ -84,6 +84,15 @@ def validate(vhdr, vmrk, eeg):
     for ch in range(nchans):
         if not 'Ch%d' % (ch+1) in vhdr['Channel Infos']:
             raise ValueError('%s section is missing in Channel Infos' % section)
+    # check consistency of certain values
+    if not vhdr['Common Infos']['Codepage'] == 'UTF-8':
+        raise ValueError('Unsupported codepage')
+    if not vhdr['Common Infos']['DataFormat'] == 'BINARY':
+        raise ValueError('Unsupported data format')
+    if not vhdr['Common Infos']['DataOrientation'] == 'MULTIPLEXED':
+        raise ValueError('Unsupported data orientation')
+    if not vhdr['Binary Infos']['BinaryFormat'] in ['INT_16', 'INT_32', 'IEEE_FLOAT_32']:
+        raise ValueError('Unsupported binary format')
     # check consistency between header and data
     nchans = int(vhdr['Common Infos']['NumberOfChannels'])
     if nchans != eeg.shape[0]:

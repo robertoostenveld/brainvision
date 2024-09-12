@@ -2,7 +2,7 @@
 
 This is a Python implementation to read and write EEG data in the BrainVision Core data format as defined by [BrainProducts](https://www.brainproducts.com/) and as used in [BIDS](https://bids.neuroimaging.io/).
 
-The BrainVision Core data format consists of three files: the `.vhdr` file with header information, the `.vmrk` with markers or events, and the data in a file that usually has the extension `.eeg`.
+The BrainVision Core data format consists of three files: the `.vhdr` file with header information, the `.vmrk` with markers or events, and the data in a file that usually has the extension `.eeg`. All files have to be in the same folder.
 
 The information from the header and marker is not parsed but retained as a dictionary with strings. Below some examples are given to get for example the channel names as list
 

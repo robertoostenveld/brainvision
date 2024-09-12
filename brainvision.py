@@ -41,7 +41,8 @@ def write(filename, vhdr, vmrk, eeg):
     nchans = int(vhdr['Common Infos']['NumberOfChannels'])
     for ch in range(nchans):
         info = vhdr['Channel Infos']['Ch%d' % (ch+1)]
-        (name, ref, resolution, unit) = info.split(',')
+        parts = info.split(',') + ['µV'] # older files might not have the Unit field, default is µV
+        (name, ref, resolution, unit) = parts[0:4]
         resolution = '1'
         vhdr['Channel Infos']['Ch%d' % (ch+1)] = ','.join((name, ref, resolution, unit))
     # write the header file
@@ -143,7 +144,8 @@ def read_eeg(filename, vhdr):
     # apply the calibration to get the actual values
     for ch in range(nchans):
         info = vhdr['Channel Infos']['Ch%d' % (ch+1)]
-        (name, ref, resolution, unit) = info.split(',')
+        parts = info.split(',') + ['µV'] # older files might not have the Unit field, default is µV
+        (name, ref, resolution, unit) = parts[0:4]
         eeg[ch] = eeg[ch] * float(resolution)
     return eeg
 

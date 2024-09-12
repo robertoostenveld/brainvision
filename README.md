@@ -18,9 +18,10 @@ import brainvision
 
 # parse the header
 nchans = int(vhdr['Common Infos']['NumberOfChannels'])
+fsample = 1000000.0 / float(vhdr['Common Infos']['SamplingInterval'])
 labels = [item.split(',')[0] for item in vhdr['Channel Infos'].values()]
 units  = [item.split(',')[3] for item in vhdr['Channel Infos'].values()]
-print(nchans, labels, units)
+print(nchans, fsample, labels, units)
 
 # parse the markers
 type        = [item.split(',')[0] for item in vmrk['Marker Infos'].values()]

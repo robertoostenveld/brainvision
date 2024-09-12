@@ -5,7 +5,7 @@ build-backend   = 'setuptools.build_meta'
 [project]
 name            = 'brainvision'
 description     = 'Read and write EEG data in the BrainVision Core data format'
-version         = '0.1'
+version         = '0.2'
 readme          = 'README.md'
 requires-python = '>= 3.8'
 authors         = [{email = 'r.oostenveld@donders.ru.nl'}, {name = 'Robert Oostenveld'}]

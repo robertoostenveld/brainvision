@@ -184,6 +184,9 @@ if __name__ == '__main__':
     duration    = [int(item.split(',')[3])   for item in vmrk['Marker Infos'].values()]   # in data points
     channel     = [int(item.split(',')[4])   for item in vmrk['Marker Infos'].values()]   # note that this is 1-based
 
+    # look at the size of the data
+    (nchans, nsamples) = eeg.shape
+
     print("-----------------------------------------------------------------")
     print('ORIGINAL FILE')
     print("-----------------------------------------------------------------")

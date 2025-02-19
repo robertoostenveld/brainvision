@@ -146,7 +146,10 @@ def read_eeg(filename, vhdr):
         info = vhdr['Channel Infos']['Ch%d' % (ch+1)]
         parts = info.split(',') + ['µV'] # older files might not have the Unit field, default is µV
         (name, ref, resolution, unit) = parts[0:4]
-        eeg[ch] = eeg[ch] * float(resolution)
+        if resolution:
+            eeg[ch] = eeg[ch] * float(resolution)
+        else:
+            print(f"Unknown resolution for '{filename}', defaulting to 1")
     return eeg
 
 
@@ -168,7 +171,7 @@ def read_ini(filename):
             pass
         elif line.startswith('['):
             # this is a section header
-            section = line[1:-1]
+            section = line[1:-1].replace('Common infos', 'Common Infos')    # NeurOne BrainVision export workaround, e.g. as in: https://github.com/mne-tools/mne-testing-data/blob/master/Brainvision/test_NO.vhdr
             ini[section] = {}
         elif '=' in line:
             # this is a key=value pair

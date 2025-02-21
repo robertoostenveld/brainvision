@@ -73,7 +73,7 @@ This implementation currently cannot deal with little to big endian conversions,
 
 ## Copyright
 
-Copyright (C) 2024, Robert Oostenveld
+Copyright (C) 2024-2025, Robert Oostenveld
 
 This code is dual-licensed under the BSD 3-Clause "New" or "Revised" License and under the GPLv3 license, the choice is up to you.
 

@@ -4,7 +4,7 @@ import numpy as np
 
 # Python implementation to read and write EEG data in the BrainVision Core data format
 #
-# Copyright (C) 2024, Robert Oostenveld
+# Copyright (C) 2024-2025, Robert Oostenveld
 
 def read(filename):
     (root, ext) = os.path.splitext(filename)
